@@ -9,6 +9,6 @@
             "email": "b2k8786@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {}
 }

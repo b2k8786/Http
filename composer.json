@@ -1,5 +1,5 @@
 {
-    "name": "b2k8786/request",
+    "name": "b2k8786/http",
     "description": "This package can be use to perform http request via post,get, multipart",
     "type": "library",
     "license": "GNU",

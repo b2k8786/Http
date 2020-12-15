@@ -1,0 +1,14 @@
+{
+    "name": "b2k8786/request",
+    "description": "This package can be use to perform http request via post,get, multipart",
+    "type": "library",
+    "license": "GNU",
+    "authors": [
+        {
+            "name": "b2k8786",
+            "email": "b2k8786@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}

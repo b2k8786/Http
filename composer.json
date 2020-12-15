@@ -1,11 +1,11 @@
 {
-    "name": "b2k8786/http",
+    "name": "b2/http",
     "description": "This package can be use to perform http request via post,get, multipart",
     "type": "library",
     "license": "GPL-3.0",
     "authors": [
         {
-            "name": "b2k8786",
+            "name": "Anil K Samal",
             "email": "b2k8786@gmail.com"
         }
     ],

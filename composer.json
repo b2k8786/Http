@@ -12,7 +12,13 @@
     "minimum-stability": "stable",
     "require": {},
     "autoload": {
-        "psr-4": { "Ak\\": "src/" }
+        "psr-4": {
+            "Ak\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ak\\": "src/"
+        }
     }
-    
 }

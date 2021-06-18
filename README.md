@@ -3,13 +3,19 @@
 ### Example
 #### GET Request
 ```php
-Http::get('www.xyz.com',null,function($res){
-    echo $res;
-});
+(new Http)
+    ->setHeader('Accept', 'json')
+    ->parameter('q', 'value')
+    ->get('xyz.com', function ($res) {
+       print_r($res);
+    });
 ```
 #### POST Request
 ```php
-Http::post('www.xyz.com',["name"=>"abc","contact"=>98xxx988x8],function($res){
-    echo $res;
-});
+(new Http)
+    ->setHeader('Accept', 'json')
+    ->parameter('q', 'value')
+    ->post('xyz.com', function ($res) {
+       print_r($res);
+    });
 ```

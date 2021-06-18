@@ -4,42 +4,67 @@ namespace Ak;
 
 class Http
 {
-    public static $verifySSL  = false;
-    public static $httpHeader = [];
-    protected static $curl;
+    public bool $verifySSL  = false;
+    public array $headers = [];
+    public array $parameters = [];
+    public $curl;
+    private array $info;
 
-    protected static function init()
+    private function init()
     {
-        self::$curl = curl_init();
-        if (count(self::$httpHeader))
-            curl_setopt(self::$curl, CURLOPT_HTTPHEADER, self::$httpHeader);
-        curl_setopt(self::$curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt(self::$curl, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt(self::$curl, CURLOPT_AUTOREFERER, true);
-        curl_setopt(self::$curl, CURLOPT_SSL_VERIFYPEER, self::$verifySSL);
+        $this->curl = curl_init();
+        if (count($this->headers))
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->headers);
+        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($this->curl, CURLOPT_AUTOREFERER, true);
+        curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->verifySSL);
+    }
+
+    public function setHeader(string $key, string $value)
+    {
+        $this->headers[$key] = $value;
+        return $this;
+    }
+    public function parameter(string $key, string $value)
+    {
+        $this->parameters[$key] = $value;
+        return $this;
+    }
+    public function files(array $files)
+    {
+        if (!empty($files)) {
+            foreach ($files as $key => $file) {
+                $this->parameters[$key] = curl_file_create(
+                    $file['tmp_name'],
+                    $file['type'],
+                    $file['name']
+                );
+            }
+        }
+        return $this;
     }
     /**
      * Generate a post request to given URL
-     * 
+     *
      * @param string $url
-     * @param array $params
-     * @param callable $successCallback   
+     * @param callable $successCallback
      * @param callable $errorCallback
      */
-    static function post($url, $params = null, $successCallback = null, $errorCallback = null)
+    public function post(string $url, $successCallback = null, $errorCallback = null)
     {
-        self::init();
-        if (count(self::$httpHeader))
-            curl_setopt(self::$curl, CURLOPT_HTTPHEADER, self::$httpHeader);
-        curl_setopt(self::$curl, CURLOPT_URL, $url);
-        curl_setopt(self::$curl, CURLOPT_POST, true);
-        
-        if (!empty($params))
-            curl_setopt(self::$curl, CURLOPT_POSTFIELDS, $params);
+        $this->init();
+        if (count($this->headers))
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->headers);
+        curl_setopt($this->curl, CURLOPT_URL, $url);
+        curl_setopt($this->curl, CURLOPT_POST, true);
 
-        $res = curl_exec(self::$curl);
-        $err = curl_error(self::$curl);
-        curl_close(self::$curl);
+        if (!empty($this->parameters))
+            curl_setopt($this->curl, CURLOPT_POSTFIELDS, $this->parameters);
+
+        $res = curl_exec($this->curl);
+        $err = curl_error($this->curl);
+        $this->setInfo();
 
         if (!empty($err) && is_callable($errorCallback))
             return $errorCallback($err);
@@ -49,69 +74,58 @@ class Http
 
     /**
      * Generate a get request to given URL
-     * 
+     *
      * @param string $url
-     * @param array $params
-     * @param callable $successCallback   
+     * @param callable $successCallback
      * @param callable $errorCallback
      */
-    static function get($url, $params = null, $successCallback = null, $errorCallback = null)
+    public function get(string $url, $successCallback = null, $errorCallback = null)
     {
-        self::init();
-        if (count(self::$httpHeader))
-            curl_setopt(self::$curl, CURLOPT_HTTPHEADER, self::$httpHeader);
+        $this->init();
+        if (count($this->headers))
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->headers);
         if (empty($url))
             throw ("URL is must");
 
-        if (!empty($params))
-            $url =   $url . http_build_query($params);
-        curl_setopt(self::$curl, CURLOPT_URL, $url);
+        if (!empty($this->parameters))
+            $url =   $url . '?' . http_build_query($this->parameters);
+        curl_setopt($this->curl, CURLOPT_URL, $url);
 
-        $res = curl_exec(self::$curl);
-        $err = curl_error(self::$curl);
-        curl_close(self::$curl);
+        $res = curl_exec($this->curl);
+        $err = curl_error($this->curl);
+        $this->setInfo();
 
         if (!empty($err) && is_callable($errorCallback))
-            return $errorCallback($err);
+            $errorCallback($err);
         else if (is_callable($successCallback))
-            return $successCallback($res);
+            $successCallback($res);
+
+        return $this;
     }
 
     /**
      * Generate a multipart post request with files included to given URL
-     * 
+     *
      * @param string $url
-     * @param array $params
-     * @param array $files
-     * @param callable $successCallback   
+     * @param callable $successCallback
      * @param callable $errorCallback
      */
-    static function multipartPost($url, $params, $files = null, $successCallback = null, $errorCallback = null)
+    public function multipartPost(string $url, $successCallback = null, $errorCallback = null)
     {
-        if (!empty($files)) {
-            foreach ($files as $key => $file) {
-                $params[$key] = curl_file_create(
-                    $file['tmp_name'],
-                    $file['type'],
-                    $file['name']
-                );
-            }
-        }
+        curl_setopt($this->curl, CURLOPT_URL, $url);
 
-        $curl = self::init();
-        curl_setopt($curl, CURLOPT_URL, $url);
+        $this->setHeader('Content-Type', 'multipart/form-data');
 
-        self::setHeader('Content-Type', 'multipart/form-data');
+        curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->headers);
 
-        curl_setopt(self::$curl, CURLOPT_HTTPHEADER, self::$httpHeader);
+        curl_setopt($this->curl, CURLOPT_HTTPHEADER, ['Content-Type: multipart/form-data']);
+        curl_setopt($this->curl, CURLOPT_POST, true);
+        if (count($this->parameters))
+            curl_setopt($this->curl, CURLOPT_POSTFIELDS, $this->parameters);
 
-        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: multipart/form-data'));
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
-
-        $res = curl_exec($curl);
-        $err = curl_error($curl);
-        curl_close($curl);
+        $res = curl_exec($this->curl);
+        $err = curl_error($this->curl);
+        $this->setInfo();
 
         if (!empty($err) && is_callable($errorCallback))
             return $errorCallback($err);
@@ -119,14 +133,17 @@ class Http
             return $successCallback($res);
     }
 
-    /**
-     * Undocumented function
-     *
-     * @param string $key
-     * @param string $value
-     */
-    static function setHeader($key, $value)
+    private function setInfo()
     {
-        array_push(self::$httpHeader, "$key: $value");
+        $this->info = curl_getinfo($this->curl);
+    }
+    public function getInfo()
+    {
+        return $this->info;
+    }
+
+    public function __destruct()
+    {
+        curl_close($this->curl);
     }
 }
